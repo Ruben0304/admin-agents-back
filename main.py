@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from routers import auth, chat, admin, assistants
 from dotenv import load_dotenv
 
@@ -8,6 +9,15 @@ app = FastAPI(
     title="Admin Agents Backend",
     description="Backend API for managing AI assistants across multiple applications",
     version="1.0.0"
+)
+
+# Add CORS middleware to allow all origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(auth.router)
