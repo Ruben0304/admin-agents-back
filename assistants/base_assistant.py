@@ -42,7 +42,7 @@ class BaseAssistant(ABC):
     
     def _load_from_database(self, assistant_id: int, db: Session):
         """Load assistant configuration from database."""
-        assistant = crud.get_assistant_by_id(db, assistant_id)
+        assistant = get_assistant_by_id(db, assistant_id)
         if not assistant:
             raise ValueError(f"Assistant with ID {assistant_id} not found")
         
@@ -64,7 +64,7 @@ class BaseAssistant(ABC):
         self.api_key = assistant.api_key
         if not self.api_key:
             # Get provider's default API key
-            api_keys = crud.get_api_keys_by_provider(db, provider.id)
+            api_keys = get_api_keys_by_provider(db, provider.id)
             if api_keys:
                 # Use first active API key (in real app, decrypt it)
                 self.api_key = api_keys[0].encrypted_key.replace("encrypted_", "")

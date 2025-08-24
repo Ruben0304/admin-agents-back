@@ -15,8 +15,8 @@ app.include_router(chat.router)
 app.include_router(admin.router)
 
 # Include assistant-specific routers
-app.include_router(assistants.suncar_router.router)
-app.include_router(assistants.moneytracker_router.router)
+app.include_router(assistants.suncar_router)
+app.include_router(assistants.moneytracker_router)
 
 @app.get("/")
 async def root():

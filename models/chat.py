@@ -10,8 +10,7 @@ class ChatRequest(BaseModel):
     api_key: Optional[str] = None
 
 class AssistantChatRequest(BaseModel):
-    assistant_id: int
-    message: str
+    prompt: str
 
 class ChatResponse(BaseModel):
     response: str

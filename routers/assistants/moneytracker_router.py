@@ -35,7 +35,7 @@ async def chat_with_moneytracker(
     """
     try:
         # Get MoneyTracker assistant from database by name
-        assistant = crud.get_assistant_by_name(db, "MoneyTracker")
+        assistant = get_assistant_by_name(db, "MoneyTracker")
         if not assistant:
             raise HTTPException(status_code=404, detail="MoneyTracker assistant not found")
         
@@ -50,7 +50,7 @@ async def chat_with_moneytracker(
         api_key = assistant.api_key
         if not api_key:
             # Get provider's default API key
-            api_keys = crud.get_api_keys_by_provider(db, provider.id)
+            api_keys = get_api_keys_by_provider(db, provider.id)
             if api_keys:
                 # Use first active API key (in real app, decrypt it)
                 api_key = api_keys[0].encrypted_key.replace("encrypted_", "")
@@ -59,7 +59,7 @@ async def chat_with_moneytracker(
         response = await chat_with_llm(
             provider_name=provider.name,
             model=model.name,
-            prompt=request.message,
+            prompt=request.prompt,
             system_prompt=assistant.system_prompt,
             streaming=assistant.is_streaming,
             api_key=api_key
@@ -84,7 +84,7 @@ async def get_moneytracker_info(
 ):
     """Get MoneyTracker assistant information and configuration"""
     try:
-        assistant = crud.get_assistant_by_name(db, "MoneyTracker")
+        assistant = get_assistant_by_name(db, "MoneyTracker")
         if not assistant:
             raise HTTPException(status_code=404, detail="MoneyTracker assistant not found")
         
@@ -98,213 +98,6 @@ async def get_moneytracker_info(
             "is_active": assistant.is_active,
             "created_at": assistant.created_at
         }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/budget-advice")
-async def get_budget_advice(
-    request: dict,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    """
-    Get personalized budget advice using MoneyTracker's financial expertise.
-    This is a specialized endpoint for budget planning.
-    """
-    try:
-        # Get MoneyTracker assistant
-        assistant = crud.get_assistant_by_name(db, "MoneyTracker")
-        if not assistant:
-            raise HTTPException(status_code=404, detail="MoneyTracker assistant not found")
-        
-        # Create specialized prompt for budget advice
-        budget_prompt = f"""
-        As a specialized financial planning assistant, provide comprehensive budget advice for:
-        
-        Monthly Income: ${request.get('monthly_income', 0)}
-        Monthly Expenses: ${request.get('monthly_expenses', 0)}
-        Financial Goals: {request.get('financial_goals', 'No specific goals')}
-        Current Savings: ${request.get('current_savings', 0)}
-        Debt Amount: ${request.get('debt_amount', 0)}
-        Age: {request.get('age', 'Unknown')}
-        
-        Please provide:
-        1. Budget breakdown (50/30/20 rule or custom)
-        2. Expense reduction strategies
-        3. Savings recommendations
-        4. Debt payoff strategies
-        5. Emergency fund advice
-        6. Investment suggestions (if applicable)
-        """
-        
-        # Get model and provider info
-        model = assistant.model
-        provider = model.provider
-        
-        # Get API key
-        api_key = assistant.api_key
-        if not api_key:
-            api_keys = crud.get_api_keys_by_provider(db, provider.id)
-            if api_keys:
-                api_key = api_keys[0].encrypted_key.replace("encrypted_", "")
-        
-        # Get budget advice from LLM
-        response = await chat_with_llm(
-            provider_name=provider.name,
-            model=model.name,
-            prompt=budget_prompt,
-            system_prompt=assistant.system_prompt,
-            streaming=False,
-            api_key=api_key
-        )
-        
-        return {
-            "budget_advice": response,
-            "financial_profile": request,
-            "generated_at": datetime.now().isoformat(),
-            "assistant": "MoneyTracker"
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/saving-plan")
-async def create_saving_plan(
-    request: dict,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    """
-    Create a personalized saving plan using MoneyTracker's financial expertise.
-    This is a specialized endpoint for saving strategies.
-    """
-    try:
-        # Get MoneyTracker assistant
-        assistant = crud.get_assistant_by_name(db, "MoneyTracker")
-        if not assistant:
-            raise HTTPException(status_code=404, detail="MoneyTracker assistant not found")
-        
-        # Create specialized prompt for saving plan
-        saving_prompt = f"""
-        As a specialized financial planning assistant, create a detailed saving plan for:
-        
-        Goal: {request.get('saving_goal', 'General savings')}
-        Target Amount: ${request.get('target_amount', 0)}
-        Timeframe: {request.get('timeframe_months', 12)} months
-        Monthly Income: ${request.get('monthly_income', 0)}
-        Current Monthly Savings: ${request.get('current_monthly_savings', 0)}
-        Risk Tolerance: {request.get('risk_tolerance', 'Moderate')}
-        
-        Please provide:
-        1. Monthly savings target
-        2. Savings strategies and tips
-        3. Timeline breakdown
-        4. Potential obstacles and solutions
-        5. Investment options (if applicable)
-        6. Progress tracking methods
-        """
-        
-        # Get model and provider info
-        model = assistant.model
-        provider = model.provider
-        
-        # Get API key
-        api_key = assistant.api_key
-        if not api_key:
-            api_keys = crud.get_api_keys_by_provider(db, provider.id)
-            if api_keys:
-                api_key = api_keys[0].encrypted_key.replace("encrypted_", "")
-        
-        # Get saving plan from LLM
-        response = await chat_with_llm(
-            provider_name=provider.name,
-            model=model.name,
-            prompt=saving_prompt,
-            system_prompt=assistant.system_prompt,
-            streaming=False,
-            api_key=api_key
-        )
-        
-        return {
-            "saving_plan": response,
-            "goal_info": request,
-            "created_at": datetime.now().isoformat(),
-            "assistant": "MoneyTracker"
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/investment-advice")
-async def get_investment_advice(
-    request: dict,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    """
-    Get investment advice using MoneyTracker's financial expertise.
-    This is a specialized endpoint for investment guidance.
-    """
-    try:
-        # Get MoneyTracker assistant
-        assistant = crud.get_assistant_by_name(db, "MoneyTracker")
-        if not assistant:
-            raise HTTPException(status_code=404, detail="MoneyTracker assistant not found")
-        
-        # Create specialized prompt for investment advice
-        investment_prompt = f"""
-        As a specialized financial investment advisor, provide investment guidance for:
-        
-        Investment Goal: {request.get('investment_goal', 'Long-term growth')}
-        Investment Amount: ${request.get('investment_amount', 0)}
-        Time Horizon: {request.get('time_horizon', '5-10 years')}
-        Risk Tolerance: {request.get('risk_tolerance', 'Moderate')}
-        Current Portfolio: {request.get('current_portfolio', 'No existing investments')}
-        Age: {request.get('age', 'Unknown')}
-        
-        Please provide:
-        1. Asset allocation recommendations
-        2. Investment vehicle suggestions
-        3. Risk management strategies
-        4. Expected returns and volatility
-        5. Rebalancing frequency
-        6. Tax considerations
-        """
-        
-        # Get model and provider info
-        model = assistant.model
-        provider = model.provider
-        
-        # Get API key
-        api_key = assistant.api_key
-        if not api_key:
-            api_keys = crud.get_api_keys_by_provider(db, provider.id)
-            if api_keys:
-                api_key = api_keys[0].encrypted_key.replace("encrypted_", "")
-        
-        # Get investment advice from LLM
-        response = await chat_with_llm(
-            provider_name=provider.name,
-            model=model.name,
-            prompt=investment_prompt,
-            system_prompt=assistant.system_prompt,
-            streaming=False,
-            api_key=api_key
-        )
-        
-        return {
-            "investment_advice": response,
-            "investment_profile": request,
-            "generated_at": datetime.now().isoformat(),
-            "assistant": "MoneyTracker"
-        }
-        
     except HTTPException:
         raise
     except Exception as e:
