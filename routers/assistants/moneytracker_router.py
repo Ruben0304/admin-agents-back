@@ -55,13 +55,16 @@ async def chat_with_moneytracker(
                 # Use first active API key (in real app, decrypt it)
                 api_key = api_keys[0].encrypted_key.replace("encrypted_", "")
         
+        # Use streaming override if provided, otherwise use assistant's default
+        use_streaming = request.streaming if request.streaming is not None else assistant.is_streaming
+        
         # Chat with LLM using MoneyTracker's configuration from database
         response = await chat_with_llm(
             provider_name=provider.name,
             model=model.name,
             prompt=request.prompt,
             system_prompt=assistant.system_prompt,
-            streaming=assistant.is_streaming,
+            streaming=use_streaming,
             api_key=api_key
         )
         
@@ -70,7 +73,7 @@ async def chat_with_moneytracker(
             assistant_name=assistant.name,
             provider=provider.display_name,
             model=model.display_name,
-            streaming_used=assistant.is_streaming
+            streaming_used=use_streaming
         )
     except HTTPException:
         raise

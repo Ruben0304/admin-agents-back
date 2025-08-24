@@ -41,10 +41,12 @@ class CohereProvider(LLMProvider):
         
         async for event in response:
             if event.type == "content-delta":
-                print(event.delta.message.content.text, end="", flush=True)
+                # For API responses, we don't want to print to console
+                # print(event.delta.message.content.text, end="", flush=True)
                 full_response += event.delta.message.content.text
             elif event.type == "message-end":
-                print()
+                # print()
+                pass
         
         return full_response
     
@@ -60,4 +62,14 @@ class CohereProvider(LLMProvider):
             model=model,
             messages=messages,
         )
-        return response.message.content[0].text
+        
+        # Handle the response properly
+        if hasattr(response, 'message') and response.message:
+            if hasattr(response.message, 'content') and response.message.content:
+                if isinstance(response.message.content, list) and len(response.message.content) > 0:
+                    return response.message.content[0].text
+                elif hasattr(response.message.content, 'text'):
+                    return response.message.content.text
+        
+        # Fallback
+        return str(response)

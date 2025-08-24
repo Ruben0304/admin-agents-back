@@ -6,6 +6,7 @@ class ApplicationCreate(BaseModel):
     name: str
     description: Optional[str] = None
     icon_url: Optional[str] = None
+    endpoint: Optional[str] = None
 
 class ApplicationResponse(BaseModel):
     id: int
@@ -13,6 +14,7 @@ class ApplicationResponse(BaseModel):
     description: Optional[str]
     icon_url: Optional[str]
     is_active: bool
+    endpoint: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -64,6 +66,7 @@ class AssistantCreate(BaseModel):
     api_key: Optional[str] = None
     is_streaming: bool = True
     config: Optional[Dict[str, Any]] = None
+    endpoint: Optional[str] = None
 
 class AssistantUpdate(BaseModel):
     name: Optional[str] = None
@@ -73,6 +76,7 @@ class AssistantUpdate(BaseModel):
     api_key: Optional[str] = None
     is_streaming: Optional[bool] = None
     config: Optional[Dict[str, Any]] = None
+    endpoint: Optional[str] = None
 
 class AssistantResponse(BaseModel):
     id: int
@@ -85,6 +89,7 @@ class AssistantResponse(BaseModel):
     is_streaming: bool
     is_active: bool
     config: Optional[Dict[str, Any]]
+    endpoint: Optional[str] = None
     application: Optional[ApplicationResponse]
     model: Optional[ModelResponse]
     created_at: datetime

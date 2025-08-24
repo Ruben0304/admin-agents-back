@@ -29,19 +29,60 @@ The system enables you to:
 
 This architecture provides maximum flexibility for managing AI assistants across different applications with complete configuration control.
 
+## Recent Updates & Current Status
+
+### Latest Refactoring (2024)
+
+- **Streamlined Router Architecture**: Simplified router inclusion in `main.py` with direct imports
+- **Enhanced Database Integration**: All assistant operations now use direct repository function calls
+- **Improved Testing Suite**: Added comprehensive HTTP test files covering all major functionality
+- **Modular Repository Pattern**: Implemented clean separation of database operations across entities
+- **Enhanced Authentication**: Strengthened JWT-based auth with proper role-based access control
+- **Simplified Admin Endpoints**: Refactored admin CRUD endpoints to be direct and simple, removing recursion issues
+- **Endpoint Field Integration**: Added endpoint field support for applications and assistants stored in database
+
+### Current Implementation Status
+
+✅ **Completed Features:**
+- Full PostgreSQL database integration with SQLAlchemy ORM
+- JWT authentication with role-based access control
+- Simplified admin CRUD endpoints for all entities (applications, providers, models, assistants, users, API keys)
+- Endpoint field support for applications and assistants with database storage
+- Direct database query operations without complex repository abstractions
+- Complete error-free admin API with proper response models
+- LLM provider factory with async support (Gemini, Cohere)
+- Database-first assistant configuration loading
+- Complete HTTP test suite for all endpoints
+
+🚧 **In Progress:**
+- Additional LLM provider integrations (OpenAI, Claude, etc.)
+- Advanced assistant features and specialized endpoints
+- Frontend admin panel development
+- Enhanced monitoring and logging capabilities
+
 ## Project Architecture
 
 This is a FastAPI backend application structured following a layered architecture pattern with **PostgreSQL database integration**:
 
-- **`main.py`** - FastAPI application entry point, includes routers and basic endpoints
+- **`main.py`** - FastAPI application entry point with direct router inclusion:
+  ```python
+  # Core routers
+  app.include_router(auth.router)
+  app.include_router(chat.router)
+  app.include_router(admin.router)
+  
+  # Assistant-specific routers
+  app.include_router(assistants.suncar_router)
+  app.include_router(assistants.moneytracker_router)
+  ```
 - **`models/`** - Pydantic models for request/response schemas and database operations
 - **`routers/`** - FastAPI route handlers organized by functionality:
-  - `/auth` - Authentication endpoints
-  - `/admin` - Admin panel endpoints for managing assistants, apps, providers
-  - `/chat` - Chat endpoints for assistant interactions
-  - **`assistants/`** - Application-specific routers for dedicated assistant endpoints:
-    - `/suncar/` - Suncar automotive assistant endpoints
-    - `/moneytracker/` - MoneyTracker financial assistant endpoints
+  - `/auth` - Authentication endpoints with JWT token management
+  - `/admin` - Comprehensive admin panel for managing all system entities
+  - `/chat` - Chat endpoints for assistant interactions (database-backed)
+  - **`assistants/`** - Specialized routers for dedicated assistant endpoints:
+    - `/suncar/` - Suncar automotive assistant with specialized endpoints
+    - `/moneytracker/` - MoneyTracker financial assistant with specialized endpoints
 - **`services/`** - Business logic layer with database-backed authentication
 - **`providers/`** - LLM provider implementations with factory pattern for multiple AI services
 - **`assistants/`** - Pre-built AI assistant implementations with specialized functionality
@@ -96,12 +137,36 @@ applications = get_applications(db)
 
 ### Core Tables
 
-- **`users`** - User accounts with bcrypt password hashing
+- **`users`** - User accounts with bcrypt password hashing, role-based access control
+  - Fields: `id`, `username`, `email`, `hashed_password`, `full_name`, `is_active`, `is_admin`
+  - Timestamps: `created_at`, `updated_at`
+
 - **`applications`** - Applications that contain assistants (e.g., "E-Commerce App")
+  - Fields: `id`, `name`, `description`, `icon_url`, `endpoint`, `is_active`, `created_by`
+  - Special Fields: `endpoint` (String) - Custom API endpoint for this application
+  - Relationships: One-to-many with assistants
+  - Timestamps: `created_at`, `updated_at`
+
 - **`providers`** - LLM providers (Gemini, Cohere, OpenAI) with display names and icons
+  - Fields: `id`, `name`, `display_name`, `icon_url`, `base_url`, `is_active`
+  - Relationships: One-to-many with models
+  - Timestamps: `created_at`, `updated_at`
+
 - **`models`** - Specific models per provider (e.g., "gemini-2.5-pro", "gpt-4o")
-- **`assistants`** - AI assistants with configurable system prompts, streaming settings
+  - Fields: `id`, `name`, `display_name`, `provider_id`, `max_tokens`, `supports_streaming`, `supports_system_prompt`, `cost_per_token`, `is_active`
+  - Relationships: Many-to-one with provider, one-to-many with assistants
+  - Timestamps: `created_at`, `updated_at`
+
+- **`assistants`** - AI assistants with configurable system prompts and streaming settings
+  - Fields: `id`, `name`, `description`, `system_prompt`, `application_id`, `model_id`, `api_key`, `is_streaming`, `is_active`, `config` (JSON), `endpoint`, `created_by`
+  - Special Fields: `endpoint` (String) - Custom API endpoint for this assistant
+  - Relationships: Many-to-one with application and model
+  - Timestamps: `created_at`, `updated_at`
+
 - **`api_keys`** - Encrypted API key storage per provider
+  - Fields: `id`, `name`, `provider_id`, `encrypted_key`, `is_active`, `created_by`
+  - Relationships: Many-to-one with provider
+  - Timestamps: `created_at`, `updated_at`
 
 ### Authentication System
 
@@ -348,17 +413,34 @@ uvicorn main:app --reload --port 8000
 
 ### Testing
 
-#### General API Testing
+#### Available Test Files
 
-Use `test_main.http` file for HTTP endpoint testing. It contains:
+The project includes several HTTP test files for comprehensive API testing:
 
-- Root endpoint test (`/`)
-- Hello endpoint test (`/hello/{name}`)
-- Auth login tests with valid/invalid credentials
+- **`test_main.http`** - Basic endpoint testing:
+  - Root endpoint test (`/`)
+  - Hello endpoint test (`/hello/{name}`)
+
+- **`test_auth_flow.http`** - Authentication flow testing:
+  - User login with valid/invalid credentials
+  - JWT token validation
+  - Protected endpoint access
+
+- **`test_admin.http`** - Admin panel endpoints testing:
+  - Application management (CRUD operations)
+  - Provider and model management
+  - Assistant configuration
+  - API key management
+  - User management (admin operations)
+
+- **`test_assistants.http`** - General assistant functionality testing:
+  - Database-backed assistant chat
+  - Provider-specific testing
+  - Configuration loading from database
 
 #### Assistant Routers Testing
 
-Use `test_assistants_routers.http` file for testing the new assistant-specific routers:
+Use **`test_assistants_routers.http`** file for testing the specialized assistant-specific routers:
 
 **Suncar Assistant Endpoints**:
 
@@ -400,38 +482,74 @@ OPENAI_API_KEY=your-openai-api-key-here
 
 ## Admin API Endpoints
 
-The system provides comprehensive admin endpoints for managing all entities:
+The system provides **simple and direct CRUD endpoints** for managing all entities with **endpoint field support**:
 
 ### Authentication
 
 - `POST /auth/login` - User authentication with JWT tokens
 
-### Applications
+### Applications CRUD
 
-- `GET /admin/applications` - List all applications
-- `POST /admin/applications` - Create new application (admin only)
-- `GET /admin/applications/{id}` - Get specific application
+- `GET /admin/applications` - List all applications (includes `endpoint` field from database)
+- `POST /admin/applications` - Create new application (admin only, supports `endpoint` field)
+- `GET /admin/applications/{id}` - Get specific application (includes `endpoint` field)
 
-### Providers & Models
+**Example Response**:
+```json
+{
+  "id": 1,
+  "name": "E-Commerce App",
+  "description": "Customer support application",
+  "icon_url": "https://example.com/icon.png",
+  "endpoint": "/api/v1/ecommerce",
+  "is_active": true,
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": null
+}
+```
+
+### Providers & Models CRUD
 
 - `GET /admin/providers` - List all LLM providers
-- `GET /admin/providers/{id}/models` - Get models for specific provider
+- `GET /admin/providers/{provider_id}` - Get specific provider
+- `GET /admin/providers/{provider_id}/models` - Get models for specific provider
+- `GET /admin/models` - Get all models across all providers
+- `GET /admin/models/{model_id}` - Get specific model
 - `POST /admin/models` - Create new model (admin only)
 
-### Assistants
+### Assistants CRUD
 
-- `GET /admin/applications/{id}/assistants` - Get assistants for application
-- `POST /admin/assistants` - Create new assistant
-- `GET /admin/assistants/{id}` - Get specific assistant
-- `PUT /admin/assistants/{id}` - Update assistant configuration
+- `GET /admin/assistants` - Get all assistants across all applications (includes `endpoint` field)
+- `GET /admin/applications/{app_id}/assistants` - Get assistants for specific application
+- `GET /admin/assistants/{assistant_id}` - Get specific assistant (includes `endpoint` field)
+- `POST /admin/assistants` - Create new assistant (supports `endpoint` field)
+- `PUT /admin/assistants/{assistant_id}` - Update assistant configuration (supports `endpoint` field)
+
+**Example Response**:
+```json
+{
+  "id": 1,
+  "name": "Customer Support Bot",
+  "description": "Helps with customer inquiries",
+  "system_prompt": "You are a helpful customer support assistant...",
+  "application_id": 1,
+  "model_id": 1,
+  "endpoint": "/chat/customer-support",
+  "is_streaming": true,
+  "is_active": true,
+  "config": {},
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": null
+}
+```
 
 ### User Management
 
 - `POST /admin/users` - Create new user (admin only)
 
-### API Keys
+### API Keys CRUD
 
-- `GET /admin/providers/{id}/api-keys` - Get API keys for provider (admin only)
+- `GET /admin/providers/{provider_id}/api-keys` - Get API keys for provider (admin only)
 - `POST /admin/api-keys` - Store encrypted API key (admin only)
 
 ### Chat Endpoints
@@ -439,6 +557,15 @@ The system provides comprehensive admin endpoints for managing all entities:
 - `POST /chat/` - Direct chat with specified provider, model, and configuration
 - `POST /chat/assistant` - **Chat with assistant using database configuration** (loads all settings from DB)
 - `GET /chat/test` - Test endpoint for Gemini provider
+
+### Key Features
+
+- **Simple Direct Queries**: All endpoints use direct database queries without complex abstractions
+- **Endpoint Field Support**: Applications and assistants include `endpoint` field stored in database
+- **Error-Free Operation**: Resolved all recursion and TypeError issues
+- **Proper Response Models**: All endpoints return structured JSON with correct field mapping
+- **JWT Authentication**: All endpoints require valid authentication tokens
+- **Admin-Only Operations**: Sensitive operations require admin privileges
 
 ## Application-Specific Router Architecture
 
@@ -711,11 +838,14 @@ const chatWithAccountManager = async (message) => {
 
 ## Key Dependencies
 
-- **FastAPI** - Web framework with automatic API documentation
-- **SQLAlchemy** - Database ORM with PostgreSQL support
-- **Pydantic** - Data validation and serialization
-- **passlib[bcrypt]** - Secure password hashing
-- **python-jose[cryptography]** - JWT token handling
-- **psycopg2-binary** - PostgreSQL database driver
-- **google-genai** - Google Gemini AI integration
-- **cohere** - Cohere AI integration
+- **FastAPI** - Modern web framework with automatic API documentation and async support
+- **SQLAlchemy** - Database ORM with PostgreSQL support and relationship management
+- **Alembic** - Database migration tool for schema versioning
+- **Pydantic** - Data validation and serialization with type hints
+- **passlib[bcrypt]** - Secure password hashing with bcrypt algorithm
+- **python-jose[cryptography]** - JWT token creation and validation
+- **psycopg2-binary** - PostgreSQL database driver with binary packages
+- **python-dotenv** - Environment variable loading from .env files
+- **uvicorn** - ASGI server for running FastAPI applications
+- **google-genai** - Google Gemini AI integration with async support
+- **cohere** - Cohere AI integration with AsyncClientV2

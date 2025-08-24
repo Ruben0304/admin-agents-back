@@ -35,9 +35,22 @@ class GeminiProvider(LLMProvider):
                 model=model,
                 contents=contents,
             ):
-                if chunk.text:
-                    print(chunk.text, end="", flush=True)
-                    result += chunk.text
+                # Handle chunk text properly
+                chunk_text = ""
+                if hasattr(chunk, 'text') and chunk.text:
+                    chunk_text = chunk.text
+                elif hasattr(chunk, 'candidates') and chunk.candidates:
+                    candidate = chunk.candidates[0]
+                    if hasattr(candidate, 'content') and candidate.content:
+                        if hasattr(candidate.content, 'parts') and candidate.content.parts:
+                            for part in candidate.content.parts:
+                                if hasattr(part, 'text') and part.text:
+                                    chunk_text += part.text
+                
+                if chunk_text:
+                    # For API responses, we don't want to print to console
+                    # print(chunk_text, end="", flush=True)
+                    result += chunk_text
             return result
         
         full_response = await asyncio.to_thread(sync_streaming)
@@ -56,7 +69,17 @@ class GeminiProvider(LLMProvider):
                 model=model,
                 contents=contents,
             )
-            return response.text
+            # Handle the response properly
+            if hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'content') and candidate.content:
+                    if hasattr(candidate.content, 'parts') and candidate.content.parts:
+                        return candidate.content.parts[0].text
+            # Fallback to text attribute if available
+            if hasattr(response, 'text'):
+                return response.text
+            # If nothing works, return the string representation
+            return str(response)
         
         return await asyncio.to_thread(sync_chat)
 

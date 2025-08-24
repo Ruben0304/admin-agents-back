@@ -11,6 +11,7 @@ class ChatRequest(BaseModel):
 
 class AssistantChatRequest(BaseModel):
     prompt: str
+    streaming: Optional[bool] = None  # Override assistant's default streaming setting
 
 class ChatResponse(BaseModel):
     response: str

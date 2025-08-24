@@ -23,6 +23,7 @@ class Application(Base):
     name = Column(String(100), unique=True, nullable=False)
     description = Column(Text)
     icon_url = Column(String(255))
+    endpoint = Column(String(100), unique=True, nullable=True)  # API endpoint for this application
     is_active = Column(Boolean, default=True)
     created_by = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -73,6 +74,7 @@ class Assistant(Base):
     application_id = Column(Integer, ForeignKey("applications.id"))
     model_id = Column(Integer, ForeignKey("models.id"))
     api_key = Column(String(255))  # Optional API key override
+    endpoint = Column(String(100), nullable=True)  # API endpoint for this assistant
     is_streaming = Column(Boolean, default=True)
     is_active = Column(Boolean, default=True)
     config = Column(JSON)  # Additional configuration as JSON

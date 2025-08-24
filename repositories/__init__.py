@@ -15,14 +15,15 @@ __all__ = [
     "authenticate_user",
     
     # Application operations
-    "get_applications",
+    "get_all_applications",
     "get_application_by_id",
-    "create_application",
+    "create_new_application",
     
     # Provider operations
-    "get_providers",
+    "get_all_providers",
     "get_provider_by_name",
-    "create_provider",
+    "get_provider_by_id",
+    "create_new_provider",
     
     # Model operations
     "get_models_by_provider",
@@ -39,4 +40,4 @@ __all__ = [
     # API Key operations
     "get_api_keys_by_provider",
     "create_api_key"
-] 
+]
