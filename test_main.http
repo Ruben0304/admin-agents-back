@@ -1,0 +1,139 @@
+# =================================================================
+# FastAPI Endpoints Test Suite - Admin Agents Backend
+# =================================================================
+
+# =================
+# BASIC ENDPOINTS
+# =================
+
+# Root endpoint
+GET http://127.0.0.1:8000/
+Accept: application/json
+
+###
+
+# Hello endpoint with user parameter
+GET http://127.0.0.1:8000/hello/User
+Accept: application/json
+
+###
+
+# =================
+# AUTHENTICATION
+# =================
+
+# Login with VALID credentials - should return JWT token
+POST http://127.0.0.1:8000/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "password123"
+}
+
+###
+
+# Login with INVALID credentials - should return 401 error
+POST http://127.0.0.1:8000/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "wrongpassword"
+}
+
+###
+
+# =================
+# CHAT ENDPOINTS - NON-STREAMING
+# =================
+
+# Simple Gemini test endpoint
+GET http://127.0.0.1:8000/chat/test
+Accept: application/json
+
+###
+
+# Basic chat with Gemini (default settings, NO streaming)
+POST http://127.0.0.1:8000/chat/
+Content-Type: application/json
+
+{
+  "message": "Hola, ¿puedes ayudarme con una pregunta rápida?"
+}
+
+###
+
+# =================================================================
+# STREAMING TESTS - Watch terminal for real-time responses!
+# =================================================================
+
+# ⚡ GEMINI STREAMING - Short Response Test
+# Watch the terminal for streaming chunks appearing in real-time
+POST http://127.0.0.1:8000/chat/
+Content-Type: application/json
+
+{
+  "message": "Cuenta del 1 al 10, separando cada número con una pausa",
+  "provider": "gemini",
+  "model": "gemini-2.5-flash",
+  "streaming": true
+}
+
+###
+
+# ⚡ GEMINI STREAMING - Long Response Test
+# Perfect for seeing streaming in action with a longer response
+POST http://127.0.0.1:8000/chat/
+Content-Type: application/json
+
+{
+  "message": "Explícame qué es la inteligencia artificial en detalle, incluyendo sus aplicaciones principales y el futuro de esta tecnología",
+  "provider": "gemini",
+  "model": "gemini-2.5-flash",
+  "streaming": true
+}
+
+###
+
+# ⚡ COHERE STREAMING - Interactive Test
+# Watch streaming response from Cohere provider
+POST http://127.0.0.1:8000/chat/
+Content-Type: application/json
+
+{
+  "message": "Háblame sobre las ventajas del streaming en aplicaciones web modernas",
+  "provider": "cohere",
+  "model": "command-a-03-2025",
+  "streaming": true
+}
+
+###
+
+# ⚡ GEMINI STREAMING - Code Generation Test
+# Great for testing streaming with code responses
+POST http://127.0.0.1:8000/chat/
+Content-Type: application/json
+
+{
+  "message": "Escribe una función en Python que implemente el algoritmo de ordenamiento burbuja, explicando cada paso",
+  "provider": "gemini",
+  "model": "gemini-2.5-pro",
+  "streaming": true
+}
+
+###
+
+# ⚡ COHERE STREAMING - Creative Writing Test  
+# Test streaming with creative content generation
+POST http://127.0.0.1:8000/chat/
+Content-Type: application/json
+
+{
+  "message": "Escribe un cuento corto sobre un robot que aprende a sentir emociones",
+  "provider": "cohere",
+  "model": "command-a-03-2025",
+  "streaming": true
+}
+
+###
