@@ -9,7 +9,18 @@ class ChatRequest(BaseModel):
     streaming: bool = False
     api_key: Optional[str] = None
 
+class AssistantChatRequest(BaseModel):
+    assistant_id: int
+    message: str
+
 class ChatResponse(BaseModel):
     response: str
     provider: str
     model: str
+
+class AssistantChatResponse(BaseModel):
+    response: str
+    assistant_name: str
+    provider: str
+    model: str
+    streaming_used: bool

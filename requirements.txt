@@ -3,3 +3,9 @@ fastapi
 google-genai
 cohere
 python-dotenv
+sqlalchemy
+psycopg2-binary
+alembic
+uvicorn
+passlib[bcrypt]
+python-jose[cryptography]

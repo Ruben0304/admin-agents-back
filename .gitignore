@@ -139,3 +139,6 @@ tmp/
 # Logs
 logs/
 *.log
+
+# HTTP test files
+*.http
