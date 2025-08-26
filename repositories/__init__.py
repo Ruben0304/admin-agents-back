@@ -5,6 +5,7 @@ from .provider_repository import *
 from .model_repository import *
 from .assistant_repository import *
 from .api_key_repository import *
+from .template_repository import *
 
 __all__ = [
     # User operations
@@ -39,5 +40,22 @@ __all__ = [
     
     # API Key operations
     "get_api_keys_by_provider",
-    "create_api_key"
+    "create_api_key",
+    
+    # Template operations
+    "get_application_templates",
+    "get_application_template_by_id",
+    "get_application_templates_by_category",
+    "create_application_template",
+    "create_application_from_template",
+    "get_assistant_templates",
+    "get_assistant_template_by_id",
+    "get_assistant_templates_by_category",
+    "create_assistant_template",
+    "create_assistant_from_template",
+    "extract_template_variables",
+    "preview_template_with_variables",
+    "search_application_templates",
+    "search_assistant_templates",
+    "get_template_categories"
 ]

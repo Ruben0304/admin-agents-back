@@ -15,6 +15,11 @@ The system enables you to:
 - **Dynamic Model Selection**: Change LLM providers and models through an admin panel without code modifications:
   - Switch between providers (Gemini, Cohere, OpenAI, etc.)
   - Select specific models within each provider (e.g., gemini-2.5-pro, command-r, gpt-4)
+- **Dynamic Provider Creation**: Create custom LLM providers with Python code through admin interface:
+  - Code templates for popular providers (OpenAI, Anthropic, etc.)
+  - Real-time validation and testing framework
+  - Secure code execution environment
+  - Template-based provider setup with configuration schemas
 - **System Prompt Management**: Customize system prompts for each assistant through the admin interface
 - **API Key Management**: Configure API keys for different providers through the admin panel
 - **Zero-Code Configuration**: All changes are made through the admin interface, requiring no code deployments
@@ -47,10 +52,14 @@ This architecture provides maximum flexibility for managing AI assistants across
 - Full PostgreSQL database integration with SQLAlchemy ORM
 - JWT authentication with role-based access control
 - Simplified admin CRUD endpoints for all entities (applications, providers, models, assistants, users, API keys)
+- **Dynamic Provider System**: Complete implementation with database storage and code execution
+- **Provider Templates**: Pre-built code templates for OpenAI, Anthropic, and other popular providers
+- **Code Validation & Testing**: Real-time Python code validation and live API testing framework
+- **Route Ordering Fix**: Proper FastAPI route precedence for dynamic vs static provider endpoints
 - Endpoint field support for applications and assistants with database storage
 - Direct database query operations without complex repository abstractions
 - Complete error-free admin API with proper response models
-- LLM provider factory with async support (Gemini, Cohere)
+- LLM provider factory with async support (Gemini, Cohere, Dynamic Providers)
 - Database-first assistant configuration loading
 - Complete HTTP test suite for all endpoints
 
@@ -147,8 +156,14 @@ applications = get_applications(db)
   - Relationships: One-to-many with assistants
   - Timestamps: `created_at`, `updated_at`
 
-- **`providers`** - LLM providers (Gemini, Cohere, OpenAI) with display names and icons
+- **`providers`** - LLM providers (Gemini, Cohere, OpenAI) with display names and icons, supports dynamic providers
   - Fields: `id`, `name`, `display_name`, `icon_url`, `base_url`, `is_active`
+  - **Dynamic Provider Fields**:
+    - `is_dynamic` (Boolean) - Distinguishes user-created vs built-in providers
+    - `python_code` (Text) - Custom Python implementation code
+    - `required_dependencies` (JSON) - List of pip packages needed
+    - `config_schema` (JSON) - Schema for API keys and configuration variables
+    - `validation_code` (Text) - Code to test provider API connectivity
   - Relationships: One-to-many with models
   - Timestamps: `created_at`, `updated_at`
 
@@ -510,12 +525,48 @@ The system provides **simple and direct CRUD endpoints** for managing all entiti
 
 ### Providers & Models CRUD
 
-- `GET /admin/providers` - List all LLM providers
+- `GET /admin/providers` - List all LLM providers (static and dynamic)
 - `GET /admin/providers/{provider_id}` - Get specific provider
 - `GET /admin/providers/{provider_id}/models` - Get models for specific provider
 - `GET /admin/models` - Get all models across all providers
 - `GET /admin/models/{model_id}` - Get specific model
 - `POST /admin/models` - Create new model (admin only)
+
+### Dynamic Provider Management (Admin only)
+
+**IMPORTANT**: Dynamic provider routes must come before generic provider routes in FastAPI to avoid path conflicts.
+
+- `GET /admin/providers/dynamic` - List all user-created dynamic providers
+- `POST /admin/providers/dynamic` - Create new dynamic provider with custom Python code
+- `GET /admin/providers/dynamic/{id}` - Get specific dynamic provider details
+- `PUT /admin/providers/dynamic/{id}` - Update dynamic provider code and configuration
+- `DELETE /admin/providers/dynamic/{id}` - Soft delete dynamic provider
+- `GET /admin/providers/dynamic/{id}/code` - Get provider Python code (admin only for security)
+- `POST /admin/providers/dynamic/test` - Test provider code with real API calls before deployment
+- `POST /admin/providers/code/validate` - Validate Python code syntax and structure
+- `GET /admin/providers/code/template?provider_type=openai` - Get code templates for different providers
+- `POST /admin/providers/dynamic/debug` - Debug endpoint for troubleshooting provider creation
+
+**Example Dynamic Provider Response**:
+```json
+{
+  "id": 1,
+  "name": "custom_openai",
+  "display_name": "Custom OpenAI Provider",
+  "icon_url": "https://example.com/openai.png",
+  "base_url": "https://api.openai.com/v1",
+  "is_active": true,
+  "is_dynamic": true,
+  "config_schema": {
+    "api_key": {"type": "string", "required": true},
+    "max_tokens": {"type": "integer", "default": 1000}
+  },
+  "required_dependencies": ["openai", "requests"],
+  "has_validation_code": true,
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-01-01T12:00:00Z"
+}
+```
 
 ### Assistants CRUD
 

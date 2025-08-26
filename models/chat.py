@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict, Any
 
 class ChatRequest(BaseModel):
     message: str
@@ -8,6 +8,7 @@ class ChatRequest(BaseModel):
     system_prompt: Optional[str] = None
     streaming: bool = False
     api_key: Optional[str] = None
+    config_vars: Optional[Dict[str, Any]] = None  # For dynamic providers
 
 class AssistantChatRequest(BaseModel):
     prompt: str

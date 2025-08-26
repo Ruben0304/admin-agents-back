@@ -41,6 +41,14 @@ class Provider(Base):
     icon_url = Column(String(255))
     base_url = Column(String(255))
     is_active = Column(Boolean, default=True)
+    
+    # Dynamic Provider Fields
+    is_dynamic = Column(Boolean, default=False)  # True for user-created providers
+    python_code = Column(Text)  # Python code template for provider implementation
+    required_dependencies = Column(JSON)  # List of pip packages needed
+    config_schema = Column(JSON)  # Schema for configuration variables (API keys, endpoints, etc.)
+    validation_code = Column(Text)  # Code to validate configuration and API keys
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -99,4 +107,48 @@ class ApiKey(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     provider = relationship("Provider")
+    creator = relationship("User")
+
+
+class ApplicationTemplate(Base):
+    __tablename__ = "application_templates"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), unique=True, nullable=False)
+    display_name = Column(String(150), nullable=False)
+    description = Column(Text)
+    icon_url = Column(String(255))
+    category = Column(String(50), default="general")
+    tags = Column(JSON, default=list)  # List of tags
+    template_config = Column(JSON, default=dict)  # Configuration template
+    default_assistants = Column(JSON, default=list)  # Default assistants configuration
+    usage_count = Column(Integer, default=0)  # How many times this template was used
+    is_active = Column(Boolean, default=True)
+    created_by = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    creator = relationship("User")
+
+
+class AssistantTemplate(Base):
+    __tablename__ = "assistant_templates"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), unique=True, nullable=False)
+    display_name = Column(String(150), nullable=False)
+    description = Column(Text)
+    category = Column(String(50), default="general")
+    system_prompt_template = Column(Text, nullable=False)  # System prompt with variables like {company_name}
+    default_provider = Column(String(50))  # Default provider name
+    default_model = Column(String(100))    # Default model name
+    default_config = Column(JSON, default=dict)  # Default configuration
+    tags = Column(JSON, default=list)  # List of tags
+    prompt_variables = Column(JSON, default=list)  # Variables that can be customized
+    usage_count = Column(Integer, default=0)  # How many times this template was used
+    is_active = Column(Boolean, default=True)
+    created_by = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
     creator = relationship("User")

@@ -8,7 +8,7 @@ from repositories import *
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 @router.post("/", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     try:
         response = await chat_with_llm(
             provider_name=request.provider,
@@ -16,7 +16,9 @@ async def chat(request: ChatRequest):
             prompt=request.message,
             system_prompt=request.system_prompt,
             streaming=request.streaming,
-            api_key=request.api_key
+            api_key=request.api_key,
+            config_vars=request.config_vars,
+            db_session=db
         )
         
         return ChatResponse(
